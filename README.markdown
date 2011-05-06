@@ -15,12 +15,18 @@ Note that I would be the first to admit that this is not really the ideal workfl
 ## Usage
 
 Populate the variables at the top of the script with the correct values for your installation.
- 1. @repo_location - should contain the absolute path to the repository you are running the hook in.
- 2. @repo_path - should be the path of the repository as configured in reviewboard.
- 3. @reviewboard_url - should be the url to your reviewboard instance.
- 4. @reviewboard_username - should be the username of a reviewboard user *with rights to submit as other users*.
- 5. @reviewboard_password - should be the password for the given user.
- 6. @authors - should be a mapping between the git author email and the relevant reviewboard username. Note that if the author cannot be resolved in this hash, the commit is ignored.
+
+1.  @repo_location - should contain the absolute path to the repository you are running the hook in.
+
+2.  @repo_path - should be the path of the repository as configured in reviewboard.
+
+3.  @reviewboard_url - should be the url to your reviewboard instance.
+
+4.  @reviewboard_username - should be the username of a reviewboard user *with rights to submit as other users*.
+
+5.  @reviewboard_password - should be the password for the given user.
+
+6.  @authors - should be a mapping between the git author email and the relevant reviewboard username. Note that if the author cannot be resolved in this hash, the commit is ignored.
 
 ## Written By
 
