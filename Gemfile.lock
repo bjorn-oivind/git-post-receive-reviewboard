@@ -1,0 +1,22 @@
+GEM
+  remote: http://rubygems.org/
+  remote: http://gemcutter.org/
+  specs:
+    diff-lcs (1.1.2)
+    grit (2.4.1)
+      diff-lcs (~> 1.1)
+      mime-types (~> 1.15)
+    i18n (0.5.0)
+    json (1.5.1)
+    mime-types (1.16)
+    rest-client (1.6.1)
+      mime-types (>= 1.16)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  grit
+  i18n
+  json
+  rest-client
