@@ -36,7 +36,6 @@ def parse_author(author)
 end
 
 def post_review
-  p "posting for #{@old_rev} #{@new_rev} #{@ref_type} #{@ref_name}"
   # we don't care about tags
   return unless @ref_type == "heads"
 
