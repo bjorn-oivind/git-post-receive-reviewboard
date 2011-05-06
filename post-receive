@@ -35,15 +35,15 @@ def parse_author(author)
   @authors[author.email.downcase]
 end
 
-def post_review(old_rev, new_rev, ref_type, ref_name)
+def post_review
+  p "posting for #{@old_rev} #{@new_rev} #{@ref_type} #{@ref_name}"
   # we don't care about tags
-  exit unless ref_type == "heads"
+  return unless @ref_type == "heads"
 
-  repo = Repo.new(@repo_location)
-  commit = repo.commit(new_rev)
+  commit = @repo.commit(@new_rev)
   submit_as = parse_author(commit.author)
   # if we don't know the author, we don't want to post a review. This is to support merges in the kernel trees for instance.
-  exit unless submit_as
+  return unless submit_as
 
   # set up a resource
   reviewboard = RestClient::Resource.new(@reviewboard_url, :user => @reviewboard_username, :password => @reviewboard_password, :headers => { :accept => 'application/json', :accept_encoding => ''})
@@ -52,7 +52,7 @@ def post_review(old_rev, new_rev, ref_type, ref_name)
 
   # create a new review request
   parsed = JSON.parse review_requests.post :multipart => true, :repository => @repo_path, :submit_as => submit_as
-  exit unless parsed["review_request"]["id"]
+  return unless parsed["review_request"]["id"]
 
   our_id = parsed["review_request"]["id"]
   review = review_requests["#{our_id}/"]
@@ -60,7 +60,7 @@ def post_review(old_rev, new_rev, ref_type, ref_name)
   review_draft = review['draft/']
   # update the draft with the information on hand
   parsed = JSON.parse review_draft.put :multipart => true, :target_groups => 'utvikling', :summary => commit.short_message, :description => commit.message
-  exit unless parsed["stat"] == "ok"
+  return unless parsed["stat"] == "ok"
 
   review_diffs = review['diffs/']
   diff_file = Tempfile.new('diff')
@@ -77,7 +77,7 @@ def post_review(old_rev, new_rev, ref_type, ref_name)
 
     # use the file variant of the multipart class, since reviewboard did not work with just "path".
     parsed = JSON.parse review_diffs.post :multipart => true, "path" => diff_file
-    exit unless parsed["stat"] == "ok"
+    return unless parsed["stat"] == "ok"
   ensure
     diff_file.close
     diff_file.unlink
@@ -85,10 +85,12 @@ def post_review(old_rev, new_rev, ref_type, ref_name)
 
   # publish the review.
   parsed = JSON.parse review_draft.put :multipart => true, :public => 1
-  exit unless parsed["stat"] == "ok"
+  return unless parsed["stat"] == "ok"
 
   p "Posted review #{our_id}."
 end
+
+@repo = Repo.new(@repo_location)
 
 # read the parameters from stdin
 stdins = []; stdins << $_ while gets
@@ -102,6 +104,6 @@ stdins.each do |str|
   @ref_type = refs[1]
   @ref_name = refs[2]
 
-  post_review @old_rev, @new_rev, @ref_type, @ref_name
+  post_review
 end
 
