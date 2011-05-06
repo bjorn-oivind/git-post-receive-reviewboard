@@ -6,6 +6,7 @@
 @reviewboard_username = 'user'
 @reviewboard_password = 'password'
 # list of author emails and their corresponding username in reviewboard.
+# for simplicity, make sure the email is in lower case.
 @authors = {
   "author@example.com" => "author",
   }
@@ -31,7 +32,7 @@ class Tempfile
 end
 
 def parse_author(author)
-  @authors[author.email]
+  @authors[author.email.downcase]
 end
 
 # read the parameters from stdin
