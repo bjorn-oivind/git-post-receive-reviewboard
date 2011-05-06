@@ -39,54 +39,55 @@ def post_review
   # we don't care about tags
   return unless @ref_type == "heads"
 
-  commit = @repo.commit(@new_rev)
-  submit_as = parse_author(commit.author)
-  # if we don't know the author, we don't want to post a review. This is to support merges in the kernel trees for instance.
-  return unless submit_as
+  @repo.commits_between(@old_rev, @new_rev).each do |commit|
+    submit_as = parse_author(commit.author)
+    # if we don't know the author, we don't want to post a review. This is to support merges in the kernel trees for instance.
+    return unless submit_as
 
-  # set up a resource
-  reviewboard = RestClient::Resource.new(@reviewboard_url, :user => @reviewboard_username, :password => @reviewboard_password, :headers => { :accept => 'application/json', :accept_encoding => ''})
-  api = reviewboard['api/']
-  review_requests = api['review-requests/']
+    # set up a resource
+    reviewboard = RestClient::Resource.new(@reviewboard_url, :user => @reviewboard_username, :password => @reviewboard_password, :headers => { :accept => 'application/json', :accept_encoding => ''})
+    api = reviewboard['api/']
+    review_requests = api['review-requests/']
 
-  # create a new review request
-  parsed = JSON.parse review_requests.post :multipart => true, :repository => @repo_path, :submit_as => submit_as
-  return unless parsed["review_request"]["id"]
+    # create a new review request
+    parsed = JSON.parse review_requests.post :multipart => true, :repository => @repo_path, :submit_as => submit_as
+    return unless parsed["review_request"]["id"]
 
-  our_id = parsed["review_request"]["id"]
-  review = review_requests["#{our_id}/"]
+    our_id = parsed["review_request"]["id"]
+    review = review_requests["#{our_id}/"]
 
-  review_draft = review['draft/']
-  # update the draft with the information on hand
-  parsed = JSON.parse review_draft.put :multipart => true, :target_groups => 'utvikling', :summary => commit.short_message, :description => commit.message
-  return unless parsed["stat"] == "ok"
+    review_draft = review['draft/']
+    # update the draft with the information on hand
+    parsed = JSON.parse review_draft.put :multipart => true, :target_groups => 'utvikling', :summary => commit.short_message, :description => commit.message
+    return unless parsed["stat"] == "ok"
 
-  review_diffs = review['diffs/']
-  diff_file = Tempfile.new('diff')
-  begin
-    commit.diffs.each do |diff|
-      # recreate the "diff --git" output
-      diff_file.write "diff --git #{diff.a_path} #{diff.b_path}\n"
-      diff_file.write "index #{diff.a_blob.id}..#{diff.b_blob.id} #{diff.b_mode}\n"
-      diff_file.write diff.diff
-      diff_file.write "\n"
+    review_diffs = review['diffs/']
+    diff_file = Tempfile.new('diff')
+    begin
+      commit.diffs.each do |diff|
+        # recreate the "diff --git" output
+        diff_file.write "diff --git #{diff.a_path} #{diff.b_path}\n"
+        diff_file.write "index #{diff.a_blob.id}..#{diff.b_blob.id} #{diff.b_mode}\n"
+        diff_file.write diff.diff
+        diff_file.write "\n"
+      end
+
+      diff_file.rewind
+
+      # use the file variant of the multipart class, since reviewboard did not work with just "path".
+      parsed = JSON.parse review_diffs.post :multipart => true, "path" => diff_file
+      return unless parsed["stat"] == "ok"
+    ensure
+      diff_file.close
+      diff_file.unlink
     end
 
-    diff_file.rewind
-
-    # use the file variant of the multipart class, since reviewboard did not work with just "path".
-    parsed = JSON.parse review_diffs.post :multipart => true, "path" => diff_file
+    # publish the review.
+    parsed = JSON.parse review_draft.put :multipart => true, :public => 1
     return unless parsed["stat"] == "ok"
-  ensure
-    diff_file.close
-    diff_file.unlink
+
+    p "Posted review #{our_id}."
   end
-
-  # publish the review.
-  parsed = JSON.parse review_draft.put :multipart => true, :public => 1
-  return unless parsed["stat"] == "ok"
-
-  p "Posted review #{our_id}."
 end
 
 @repo = Repo.new(@repo_location)
