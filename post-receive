@@ -64,14 +64,8 @@ def post_review
     review_diffs = review['diffs/']
     diff_file = Tempfile.new('diff')
     begin
-      commit.diffs.each do |diff|
-        # recreate the "diff --git" output
-        diff_file.write "diff --git #{diff.a_path} #{diff.b_path}\n"
-        diff_file.write "index #{diff.a_blob.id}..#{diff.b_blob.id} #{diff.b_mode}\n"
-        diff_file.write diff.diff
-        diff_file.write "\n"
-      end
-
+      # don't use Grit::Diff as we need the unmodified diff output anyway
+      diff_file.write repo.git.native('diff', {}, commit.parents.first.id, commit.id)
       diff_file.rewind
 
       # use the file variant of the multipart class, since reviewboard did not work with just "path".
