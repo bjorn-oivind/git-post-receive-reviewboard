@@ -65,7 +65,7 @@ def post_review
     diff_file = Tempfile.new('diff')
     begin
       # don't use Grit::Diff as we need the unmodified diff output anyway
-      diff_file.write repo.git.native('diff', {}, commit.parents.first.id, commit.id)
+      diff_file.write @repo.git.native('diff', {}, commit.parents.first.id, commit.id)
       diff_file.rewind
 
       # use the file variant of the multipart class, since reviewboard did not work with just "path".
