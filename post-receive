@@ -5,6 +5,7 @@
 @reviewboard_url = "http://url.to.your.reviewboard.com"
 @reviewboard_username = 'user'
 @reviewboard_password = 'password'
+@reviewboard_target_groups = ['taco', 'shrimp']
 # list of author emails and their corresponding username in reviewboard.
 # for simplicity, make sure the email is in lower case.
 @authors = {
@@ -58,7 +59,7 @@ def post_review
 
     review_draft = review['draft/']
     # update the draft with the information on hand
-    parsed = JSON.parse review_draft.put :multipart => true, :target_groups => 'utvikling', :summary => commit.short_message, :description => commit.message
+    parsed = JSON.parse review_draft.put :multipart => true, :target_groups => @reviewboard_target_groups.join(','), :summary => commit.short_message, :description => commit.message
     return unless parsed["stat"] == "ok"
 
     review_diffs = review['diffs/']
